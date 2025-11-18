@@ -14,7 +14,12 @@ ruta = None
 
 with open("aves.json", "r", encoding="utf-8") as archivo:
     aves = json.load(archivo)
-        
+
+try:
+    os.mkdir("Imagenes_Aves")
+except FileExistsError:
+    print("Carpeta ya creada")
+
 def buscar(event=None):
     repeticiones = 0
     linea = f"-------------------------------------------"
