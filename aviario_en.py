@@ -1,9 +1,16 @@
 import json
 from tkinter import *
 from tkinter import messagebox
+from tkinter import filedialog
+import datetime
+import shutil
+import os
+from os import listdir
+from os import remove
 
 mod_x = None
 mod_y = None
+ruta = None
 
 with open("aves.json", "r", encoding="utf-8") as archivo:
     aves = json.load(archivo)
@@ -13,6 +20,7 @@ def buscar(event=None):
     linea = f"-------------------------------------------"
     output.delete("1.0", END)
     nombre = searcher.get()
+    #Search by name
     resultado = [p for p in aves if p["nombre"].lower() == nombre.lower()]
     if resultado:
         texto = f"{len(resultado)} result(s) found:"
@@ -24,10 +32,15 @@ def buscar(event=None):
             output.insert(END, "\n" + str(name))
             output.insert(END, "\n" + str(date))
             output.insert(END, "\n" + str(note))
+            if p["imagen"] != "None":
+                output.insert(END, "\n")
+                image = Button(output, text="See image", command=lambda i=p : mostrar(i))
+                output.window_create(END, window=image)
             repeticiones = repeticiones + 1
             if len(resultado) > repeticiones:
                 output.insert(END, "\n" + linea)
     else:
+        #Search by date
         resultado = [p for p in aves if p["fecha"].lower() == nombre.lower()]
         if resultado:
             texto = f"{len(resultado)} result(s) found:"
@@ -39,6 +52,10 @@ def buscar(event=None):
                 output.insert(END, "\n" + str(name))
                 output.insert(END, "\n" + str(date))
                 output.insert(END, "\n" + str(note))
+                if p["imagen"] != "None":
+                    output.insert(END, "\n")
+                    image = Button(output, text="Ver imagen", command=lambda i=p : mostrar(i))
+                    output.window_create(END, window=image)
                 repeticiones = repeticiones + 1
                 if len(resultado) > repeticiones:
                     output.insert(END, "\n" + linea)
@@ -47,6 +64,11 @@ def buscar(event=None):
             output.insert(END, "\n" + str(error))
     searcher.delete(0, END)
     output.see(END)
+
+def mostrar(index):
+    IMG = index["imagen"]
+    rute =  os.path.join(os.getcwd(), "Imagenes_Aves", IMG)
+    os.startfile(rute)
 
 def emerger_UP(event=None):
     global intro, bird, day, opinion
@@ -72,31 +94,60 @@ def emerger_UP(event=None):
 
     opinion = Entry(intro, width=20)
     opinion.grid(row=1, column=2)
+    
+    drop = Button(intro, text="Upload image", command=select)
+    drop.grid(row=2, column=0, columnspan= 3)
 
     reg = Button(intro, text="Register", width=20, command=registrar)
-    reg.grid(row=2, column=0, columnspan= 3)
+    reg.grid(row=3, column=0, columnspan= 3)
 
     bird.focus()
 
+def select():
+    global ruta
+    ruta = filedialog.askopenfilename(
+        title="Seleccionar imagen",
+        filetypes=[("imagenes", "*.png *.jpg *.jpeg")],
+        initialdir="/"
+    )
+    if os.path.basename(ruta):
+        Images = listdir("Imagenes_Aves")
+        for x in Images:
+            if os.path.basename(ruta) == x:
+                messagebox.showerror(title=None, message="Ya hay una imagen con ese nombre")
+                ruta = ""
+
 def registrar():
+    global ruta
     Nombre = bird.get()
     Fecha = day.get()
     Nota = opinion.get()
+    Imagen = "None"
+    if ruta:
+        Imagen = os.path.basename(ruta)
+        shutil.copy(ruta, "Imagenes_Aves/"+Imagen)
+        ruta = None
 
     if not Nombre or not Fecha:
         messagebox.showerror(title=None, message="Missing data")
     else:
-        nuevo = {
-            "nombre": Nombre,
-            "fecha": Fecha,
-            "notas": Nota
-        }
-        aves.append(nuevo)
+        try:
+            Fecha_date = datetime.datetime.strptime(Fecha, "%d/%m/%Y").date()
+        except ValueError:
+            messagebox.showerror(title=None, message="Incorrect date format (dd/mm/yyyy)")
+        else:
+            nuevo = {
+                "nombre":   Nombre,
+                "fecha":    Fecha,
+                "notas":    Nota,
+                "imagen":   Imagen
+            }
+            aves.append(nuevo)
 
-        with open("aves.json", "w", encoding="utf-8") as archivo:
-            json.dump(aves, archivo, ensure_ascii=False, indent=4)
-        
-        intro.destroy()
+            with open("aves.json", "w", encoding="utf-8") as archivo:
+                json.dump(aves, archivo, ensure_ascii=False, indent=4)
+            
+            intro.destroy()
 
 def emerger_MO(event=None):
     global mod, mod_x, mod_y
@@ -127,6 +178,8 @@ def emerger_MO(event=None):
 
 def eliminar(index, entrada, borrar):
     global mod_x, mod_y
+    if aves[index]["imagen"] != "None":
+        remove("Imagenes_Aves/"+aves[index]["imagen"])
     aves.pop(index)
     entrada.destroy()
     borrar.destroy()
@@ -147,7 +200,7 @@ def centrar(ventana, ancho, alto):
 
 #Interfaz
 root = Tk()
-root.title("Aviario")
+root.title("Aviary")
 centrar(root, 400, 445)
 root.resizable(0, 0)
 root.configure(bg="#4D7C8A")
