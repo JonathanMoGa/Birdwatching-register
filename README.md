@@ -4,6 +4,7 @@
 <ul>
   <li>Record sightings by bird, date, and notes</li>
   <li>Manage saved records</li>
+  <li>Upload images of the sightings</li>
   <li>Search records by bird or date</li>
   <li>Minimal inferface</li>
   <li>Interface available in 2 languages: English and Spanish</li>
